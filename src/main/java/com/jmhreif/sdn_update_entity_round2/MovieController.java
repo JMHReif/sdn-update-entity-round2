@@ -15,32 +15,40 @@ public class MovieController {
     }
 
     @GetMapping()
-    Iterable<Movie> findAllMovies() {
+    Iterable<Movie> findMovies() {
         return movieRepository.findMoviesSubset();
     }
 
+    //Creates/updates entity, but overwrites values not in json
     @PostMapping("/save")
     Movie save(@RequestBody Movie movie) {
         return movieRepository.save(movie);
     }
 
-    @PutMapping("/updateYear")
+    //Only updates specified properties
+    @PatchMapping("/updateYear")
     Movie updateYear(@RequestParam String movieId, @RequestParam Long year) {
         return movieRepository.updateYear(movieId, year);
     }
 
-    @PutMapping("/projection4Domain")
-    MovieDTOProjection saveMovieDTOAsDomain(@RequestBody MovieDTOProjection movieDTO) {
+    //Only updates properties set in method
+    @PatchMapping("/patchYear")
+    Movie patchYear(@RequestBody Movie moviePatch) {
+        Movie existingMovie = movieRepository.findById(moviePatch.getMovieId()).get();
+        existingMovie.setYear(moviePatch.getYear());
+
+        return movieRepository.save(existingMovie);
+    }
+
+    //Only updates properties in projection
+    @PatchMapping("/projectionAsMovie")
+    MovieDTOProjection saveProjectionAsMovie(@RequestBody MovieDTOProjection movieDTO) {
         return neo4jTemplate.save(Movie.class).one(movieDTO);
     }
 
-    @PutMapping("/domain4Projection")
-    MovieDTOProjection saveMovieDTOAsProjection(@RequestBody Movie movie) {
+    //Only updates properties in projection (ignores other values)
+    @PatchMapping("/movieAsProjection")
+    MovieDTOProjection saveMovieAsProjection(@RequestBody Movie movie) {
         return neo4jTemplate.saveAs(movie, MovieDTOProjection.class);
-    }
-
-    @PatchMapping("/patchYear")
-    Movie patchYear(@RequestBody Movie moviePatch) {
-        return neo4jTemplate.save(moviePatch);
     }
 }
